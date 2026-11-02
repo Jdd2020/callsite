@@ -53,6 +53,7 @@ References++ by Johannes Rieken (microsoft/vscode-extension-samples, `contentpro
 
 - Keep pure logic (building the folder tree, counts, grouping, excerpt formatting, filtering) in modules with no `vscode` import, so it is unit-testable with Vitest.
 - Keep VS Code API glue thin.
+- Use absolute imports: `@/` for `src/` (`@/model/types`) and `@test/` for `test/` (`@test/unit/factories`), not relative paths. The aliases are defined in `tsconfig.json` `paths` and repeated in `vitest.config.mts` `resolve.alias`; keep them in sync. esbuild reads the tsconfig, but `tsc` doesn't rewrite aliases in its output, so files compiled to `out/` (the integration tests in `test/integration`) must use relative imports.
 - A few integration tests with `@vscode/test-cli` against a small fixture workspace. Language servers need time to warm up before references return.
 - Development and testing happen on a personal machine only.
 
