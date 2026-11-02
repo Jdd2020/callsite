@@ -105,6 +105,21 @@ describe('single file, single usage', () => {
 	});
 });
 
+describe('cursor left over from earlier results', () => {
+	it('treats a file index past the end as nothing selected', () => {
+		expect(nextFile(files, 6)).toBe(0);
+		expect(prevFile(files, 6)).toBe(2);
+		expect(nextUsage(files, at(6, 4))).toEqual(at(0, 0));
+		expect(prevUsage(files, at(6, 4))).toEqual(at(2, 0));
+	});
+
+	it('moves on from a usage index past the end of its file', () => {
+		// a.ts (index 1) has 2 usages.
+		expect(nextUsage(files, at(1, 9))).toEqual(at(2, 0));
+		expect(prevUsage(files, at(1, 9))).toEqual(at(1, 1));
+	});
+});
+
 describe('no files', () => {
 	it('returns undefined', () => {
 		expect(nextUsage([], NO_CURSOR)).toBeUndefined();

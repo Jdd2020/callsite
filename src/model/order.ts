@@ -24,12 +24,20 @@ export function fileOrder(root: RootNode): FileNode[] {
 	return files;
 }
 
+// Cursors can outlive the results they point into (a filter or refresh
+// rebuilds the tree with fewer files), so every entry point treats a file
+// index past the end as "nothing selected" and keeps usage indexes in range.
+
+function hasFile(files: FileNode[], fileIndex: number): boolean {
+	return fileIndex >= 0 && fileIndex < files.length;
+}
+
 /** Index of the next file, wrapping from the last to the first. */
 export function nextFile(files: FileNode[], fileIndex: number): number | undefined {
 	if (files.length === 0) {
 		return undefined;
 	}
-	return fileIndex < 0 ? 0 : (fileIndex + 1) % files.length;
+	return hasFile(files, fileIndex) ? (fileIndex + 1) % files.length : 0;
 }
 
 /** Index of the previous file, wrapping from the first to the last. */
@@ -37,7 +45,7 @@ export function prevFile(files: FileNode[], fileIndex: number): number | undefin
 	if (files.length === 0) {
 		return undefined;
 	}
-	return fileIndex < 0 ? files.length - 1 : (fileIndex - 1 + files.length) % files.length;
+	return hasFile(files, fileIndex) ? (fileIndex - 1 + files.length) % files.length : files.length - 1;
 }
 
 /** The next usage in the current file, or the first usage of the next file. */
@@ -45,7 +53,7 @@ export function nextUsage(files: FileNode[], cursor: Cursor): Cursor | undefined
 	if (files.length === 0) {
 		return undefined;
 	}
-	if (cursor.fileIndex < 0) {
+	if (!hasFile(files, cursor.fileIndex)) {
 		return { fileIndex: 0, usageIndex: 0 };
 	}
 	const usageIndex = cursor.usageIndex + 1;
@@ -60,8 +68,9 @@ export function prevUsage(files: FileNode[], cursor: Cursor): Cursor | undefined
 	if (files.length === 0) {
 		return undefined;
 	}
-	if (cursor.fileIndex >= 0 && cursor.usageIndex > 0) {
-		return { fileIndex: cursor.fileIndex, usageIndex: cursor.usageIndex - 1 };
+	if (hasFile(files, cursor.fileIndex) && cursor.usageIndex > 0) {
+		const last = files[cursor.fileIndex].usages.length - 1;
+		return { fileIndex: cursor.fileIndex, usageIndex: Math.min(cursor.usageIndex - 1, last) };
 	}
 	const fileIndex = prevFile(files, cursor.fileIndex)!;
 	return { fileIndex, usageIndex: files[fileIndex].usages.length - 1 };
