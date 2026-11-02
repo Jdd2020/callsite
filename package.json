@@ -27,7 +27,7 @@
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "check-types": "tsc --noEmit && tsc --noEmit -p test/unit",
-    "lint": "eslint src",
+    "lint": "eslint src test",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run",
     "pretest:integration": "npm run compile-tests && npm run compile",
