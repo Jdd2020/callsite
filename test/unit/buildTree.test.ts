@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildTree } from '../../src/model/buildTree';
-import { location, model, root, usage } from './factories';
-import { allFiles, findFolder, shape } from './helpers';
+import { buildTree } from '@/model/buildTree';
+import { location, model, root, usage } from '@test/unit/factories';
+import { allFiles, findFolder, shape } from '@test/unit/helpers';
 
 describe('buildTree', () => {
 	it('rolls up counts from files to folders to the root', () => {

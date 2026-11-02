@@ -1,4 +1,4 @@
-import type { FileNode, FolderNode, RootNode, TreeNode, Usage, UsageModel } from './types';
+import type { FileNode, FolderNode, RootNode, TreeNode, Usage, UsageModel } from '@/model/types';
 
 const EXTERNAL_KEY = '<external>';
 

@@ -1,6 +1,6 @@
 // Helpers for inspecting buildTree output. Inputs come from ./factories.
-import { fileOrder } from '../../src/model/order';
-import type { FileNode, FolderNode, RootNode, TreeNode } from '../../src/model/types';
+import { fileOrder } from '@/model/order';
+import type { FileNode, FolderNode, RootNode, TreeNode } from '@/model/types';
 
 /** Compact view of a tree for assertions: 'name (count)' with nested children. */
 export type Shape = string | [string, Shape[]];

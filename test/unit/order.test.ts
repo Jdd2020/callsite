@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildTree } from '../../src/model/buildTree';
-import { NO_CURSOR, fileOrder, nextFile, nextUsage, prevFile, prevUsage, type Cursor } from '../../src/model/order';
-import { cursorAt as at, model, usage } from './factories';
+import { buildTree } from '@/model/buildTree';
+import { NO_CURSOR, fileOrder, nextFile, nextUsage, prevFile, prevUsage, type Cursor } from '@/model/order';
+import { cursorAt as at, model, usage } from '@test/unit/factories';
 
 // Displayed order: src/util/b.ts, src/a.ts, z.ts (folders before files).
 const tree = buildTree(model([

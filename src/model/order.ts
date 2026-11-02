@@ -1,4 +1,4 @@
-import type { FileNode, RootNode, TreeNode } from './types';
+import type { FileNode, RootNode, TreeNode } from '@/model/types';
 
 /**
  * Position in the results. -1 means "nothing selected yet". Cursors are
