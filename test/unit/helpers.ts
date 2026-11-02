@@ -1,3 +1,4 @@
+import { fileOrder } from '../../src/model/order';
 import type { FileNode, FolderNode, RootNode, TreeNode, Usage, UsageModel } from '../../src/model/types';
 
 export const ROOT = 'file:///work/app';
@@ -51,22 +52,28 @@ export function shape(node: RootNode | TreeNode): Shape[] | Shape {
 	return node.kind === 'file' ? label : [label, node.children.map(shape) as Shape[]];
 }
 
+/** The first folder named `name`, searching depth-first. Throws if there's none. */
 export function findFolder(nodes: TreeNode[], name: string): FolderNode {
+	const folder = searchFolders(nodes, name);
+	if (!folder) {
+		throw new Error(`no folder named ${name}`);
+	}
+	return folder;
+}
+
+function searchFolders(nodes: TreeNode[], name: string): FolderNode | undefined {
 	for (const node of nodes) {
 		if (node.kind === 'folder') {
-			if (node.name === name) {
-				return node;
-			}
-			try {
-				return findFolder(node.children, name);
-			} catch {
-				// keep looking
+			const found = node.name === name ? node : searchFolders(node.children, name);
+			if (found) {
+				return found;
 			}
 		}
 	}
-	throw new Error(`no folder named ${name}`);
+	return undefined;
 }
 
+/** Every file under `nodes`, in display order. */
 export function allFiles(nodes: TreeNode[]): FileNode[] {
-	return nodes.flatMap((n) => (n.kind === 'file' ? [n] : allFiles(n.children)));
+	return fileOrder({ kind: 'root', symbol: '', count: 0, children: nodes });
 }
