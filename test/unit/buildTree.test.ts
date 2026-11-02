@@ -78,12 +78,15 @@ describe('buildTree', () => {
 
 		it('gives collapsed folders unique ids built from the full path', () => {
 			const tree = buildTree(model([
-				usage('a/b/x.ts', 1),
-				usage('a/c/y.ts', 1),
+				usage('a/b/c/x.ts', 1),
+				usage('a/d/y.ts', 1),
 			]));
-			const ids = [findFolder(tree.children, 'a'), findFolder(tree.children, 'b'), findFolder(tree.children, 'c')].map((f) => f.id);
+			expect(shape(tree)).toEqual([['a (2)', [['b/c (1)', ['x.ts (1)']], ['d (1)', ['y.ts (1)']]]]]);
+
+			const ids = ['a', 'b/c', 'd'].map((name) => findFolder(tree.children, name).id);
 			expect(new Set(ids).size).toBe(3);
-			expect(findFolder(tree.children, 'b').id).toContain('a/b');
+			// The collapsed node is identified by its deepest folder, not its first segment.
+			expect(findFolder(tree.children, 'b/c').id).toMatch(/:a\/b\/c$/);
 		});
 	});
 
