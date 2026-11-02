@@ -1,0 +1,13 @@
+{
+    // Unit tests run under Vitest (ESM), so they type-check with bundler
+    // resolution instead of the extension's Node16/CommonJS settings.
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "types": ["node"],
+        "rootDir": "../..",
+        "noEmit": true
+    },
+    "include": ["./**/*.ts", "../../src/model/**/*.ts", "../../vitest.config.mts"]
+}
