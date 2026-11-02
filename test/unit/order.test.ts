@@ -120,6 +120,16 @@ describe('cursor left over from earlier results', () => {
 	});
 });
 
+describe('NO_CURSOR', () => {
+	it('cannot be changed through a shared reference', () => {
+		const cursor = NO_CURSOR as { fileIndex: number };
+		expect(() => {
+			cursor.fileIndex = 2;
+		}).toThrow(TypeError);
+		expect(NO_CURSOR).toEqual(at(-1, -1));
+	});
+});
+
 describe('no files', () => {
 	it('returns undefined', () => {
 		expect(nextUsage([], NO_CURSOR)).toBeUndefined();

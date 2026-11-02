@@ -1,12 +1,15 @@
 import type { FileNode, RootNode, TreeNode } from './types';
 
-/** Position in the results. -1 means "nothing selected yet". */
+/**
+ * Position in the results. -1 means "nothing selected yet". Cursors are
+ * values: the stepping functions return a new one rather than changing it.
+ */
 export interface Cursor {
-	fileIndex: number;
-	usageIndex: number;
+	readonly fileIndex: number;
+	readonly usageIndex: number;
 }
 
-export const NO_CURSOR: Cursor = { fileIndex: -1, usageIndex: -1 };
+export const NO_CURSOR: Cursor = Object.freeze({ fileIndex: -1, usageIndex: -1 });
 
 /** Files in the order the tree displays them (depth-first). */
 export function fileOrder(root: RootNode): FileNode[] {
