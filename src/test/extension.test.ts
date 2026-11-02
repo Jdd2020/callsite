@@ -1,15 +1,11 @@
 import * as assert from 'assert';
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
 import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
-
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+suite('Extension', () => {
+	test('loads and activates', async () => {
+		const ext = vscode.extensions.all.find((e) => e.packageJSON.name === 'callsite');
+		assert.ok(ext, 'callsite extension is not installed in the test host');
+		await ext.activate();
+		assert.strictEqual(ext.isActive, true);
 	});
 });
