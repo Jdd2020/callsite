@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTree } from '../../src/model/buildTree';
-import { ROOT, allFiles, findFolder, model, shape, usage } from './helpers';
+import { location, model, root, usage } from './factories';
+import { allFiles, findFolder, shape } from './helpers';
 
 describe('buildTree', () => {
 	it('rolls up counts from files to folders to the root', () => {
@@ -120,7 +121,7 @@ describe('buildTree', () => {
 		it('marks the file that holds model.definition', () => {
 			const tree = buildTree(model(
 				[usage('def.ts', 1), usage('use.ts', 4)],
-				{ definition: { uri: `${ROOT}/def.ts`, range: { startLine: 1, startChar: 0, endLine: 1, endChar: 3 } } },
+				{ definition: location('def.ts', 1) },
 			));
 
 			const flags = Object.fromEntries(allFiles(tree.children).map((f) => [f.name, f.hasDefinition]));
@@ -135,18 +136,9 @@ describe('buildTree', () => {
 	});
 
 	describe('workspace roots', () => {
-		const api = 'file:///work/api';
-		const web = 'file:///work/web';
-		const docs = 'file:///work/docs';
-		// roots[0] is web, roots[1] is api.
-		const roots = [
-			{ name: 'web', uri: web },
-			{ name: 'api', uri: api },
-			{ name: 'docs', uri: docs },
-		];
-
-		const inWeb = { root: 0, rootUri: web };
-		const inApi = { root: 1, rootUri: api };
+		const roots = [root('web'), root('api'), root('docs')];
+		const inWeb = { root: 0, rootUri: roots[0].uri };
+		const inApi = { root: 1, rootUri: roots[1].uri };
 
 		it('shows one node per workspace folder in workspace order, skipping folders with no usages', () => {
 			const tree = buildTree(model(

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTree } from '../../src/model/buildTree';
 import { NO_CURSOR, fileOrder, nextFile, nextUsage, prevFile, prevUsage, type Cursor } from '../../src/model/order';
-import { model, usage } from './helpers';
+import { cursorAt as at, model, usage } from './factories';
 
 // Displayed order: src/util/b.ts, src/a.ts, z.ts (folders before files).
 const tree = buildTree(model([
@@ -13,8 +13,6 @@ const tree = buildTree(model([
 	usage('src/util/b.ts', 5),
 ]));
 const files = fileOrder(tree);
-
-const at = (fileIndex: number, usageIndex: number): Cursor => ({ fileIndex, usageIndex });
 
 describe('fileOrder', () => {
 	it('lists files depth-first in the order the tree shows them', () => {
