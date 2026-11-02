@@ -13,19 +13,29 @@ const EXTERNAL_KEY = '<external>';
  * root when no workspace is open.
  */
 export function buildTree(model: UsageModel): RootNode {
-	const byFile = new Map<string, Usage[]>();
+	// Providers sometimes report a location twice (e.g. the declaration from
+	// both references and definition), so keep one usage per file and range.
+	const byFile = new Map<string, Map<string, Usage>>();
 	for (const usage of model.usages) {
-		const list = byFile.get(usage.uri);
-		if (list) {
-			list.push(usage);
-		} else {
-			byFile.set(usage.uri, [usage]);
+		let file = byFile.get(usage.uri);
+		if (!file) {
+			file = new Map();
+			byFile.set(usage.uri, file);
+		}
+		const { startLine, startChar, endLine, endChar } = usage.range;
+		const key = `${startLine}:${startChar}:${endLine}:${endChar}`;
+		const seen = file.get(key);
+		if (!seen) {
+			file.set(key, usage);
+		} else if (usage.isDefinition && !seen.isDefinition) {
+			file.set(key, { ...seen, isDefinition: true });
 		}
 	}
 
 	// One draft per workspace root index, plus EXTERNAL_KEY.
 	const groups = new Map<number | typeof EXTERNAL_KEY, Draft>();
-	for (const [uri, usages] of byFile) {
+	for (const [uri, file] of byFile) {
+		const usages = [...file.values()];
 		const { rootIndex, path } = usages[0];
 		const key = rootIndex !== undefined && model.workspaceRoots[rootIndex] ? rootIndex : EXTERNAL_KEY;
 		let group = groups.get(key);

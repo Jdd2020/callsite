@@ -22,6 +22,19 @@ describe('buildTree', () => {
 		]);
 	});
 
+	it('counts a location reported twice once, keeping the definition flag', () => {
+		const tree = buildTree(model([
+			usage('def.ts', 1),
+			usage('def.ts', 1, { isDefinition: true }),
+			usage('def.ts', 1, { char: 8 }),
+		]));
+
+		const [file] = allFiles(tree.children);
+		expect(tree.count).toBe(2);
+		expect(file.usages.map((u) => [u.range.startChar, u.isDefinition])).toEqual([[0, true], [8, false]]);
+		expect(file.hasDefinition).toBe(true);
+	});
+
 	it('returns an empty root when there are no usages', () => {
 		const tree = buildTree(model([]));
 		expect(tree.count).toBe(0);
