@@ -27,12 +27,22 @@ export default [{
 }, {
     files: ["src/model/**/*.ts"],
 
+    // src/model must stay free of the VS Code API so it can be unit-tested.
+    // The typescript-eslint rule also covers `import x = require(...)`;
+    // no-restricted-syntax covers plain require() and dynamic import().
     rules: {
-        "no-restricted-imports": ["error", {
+        "@typescript-eslint/no-restricted-imports": ["error", {
             paths: [{
                 name: "vscode",
                 message: "src/model must stay free of the VS Code API so it can be unit-tested.",
             }],
+        }],
+        "no-restricted-syntax": ["error", {
+            selector: "CallExpression[callee.name='require'][arguments.0.value='vscode']",
+            message: "src/model must stay free of the VS Code API so it can be unit-tested.",
+        }, {
+            selector: "ImportExpression[source.value='vscode']",
+            message: "src/model must stay free of the VS Code API so it can be unit-tested.",
         }],
     },
 }];
