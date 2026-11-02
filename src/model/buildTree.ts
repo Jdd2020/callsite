@@ -1,4 +1,4 @@
-import type { FileNode, FolderNode, RootNode, TreeNode, Usage, UsageModel, WorkspaceRoot } from './types';
+import type { FileNode, FolderNode, RootNode, TreeNode, Usage, UsageModel } from './types';
 
 const EXTERNAL_KEY = '<external>';
 
@@ -23,33 +23,30 @@ export function buildTree(model: UsageModel): RootNode {
 		}
 	}
 
-	// Group key: a workspace root URI, or EXTERNAL_KEY.
-	const groups = new Map<string, Draft>();
+	// One draft per workspace root index, plus EXTERNAL_KEY.
+	const groups = new Map<number | typeof EXTERNAL_KEY, Draft>();
 	for (const [uri, usages] of byFile) {
-		const root = findRoot(uri, model.workspaceRoots);
-		const key = root ? trimSlash(root.uri) : EXTERNAL_KEY;
-		const segments = root ? pathSegments(uri.slice(key.length)) : pathSegments(stripAuthority(uri));
+		const { rootIndex, path } = usages[0];
+		const key = rootIndex !== undefined && model.workspaceRoots[rootIndex] ? rootIndex : EXTERNAL_KEY;
 		let group = groups.get(key);
 		if (!group) {
 			group = newDraft();
 			groups.set(key, group);
 		}
-		insert(group, segments, uri, usages);
+		insert(group, path, uri, usages);
 	}
 
 	const definitionUri = model.definition?.uri;
 	const children: TreeNode[] = [];
-	const workspaceGroups = model.workspaceRoots.filter((r) => groups.has(trimSlash(r.uri)));
+	const used = model.workspaceRoots.flatMap((root, index) => (groups.has(index) ? [{ root, index }] : []));
 	if (model.workspaceRoots.length > 1) {
-		for (const root of workspaceGroups) {
-			const key = trimSlash(root.uri);
-			const node = finishFolder(groups.get(key)!, root.name, key, '', definitionUri);
+		for (const { root, index } of used) {
+			const node = finishFolder(groups.get(index)!, root.name, root.uri, '', definitionUri);
 			node.group = 'workspace';
 			children.push(node);
 		}
-	} else if (workspaceGroups.length === 1) {
-		const key = trimSlash(workspaceGroups[0].uri);
-		children.push(...finishChildren(groups.get(key)!, key, '', definitionUri));
+	} else if (used.length === 1) {
+		children.push(...finishChildren(groups.get(used[0].index)!, used[0].root.uri, '', definitionUri));
 	}
 	const external = groups.get(EXTERNAL_KEY);
 	if (external && model.workspaceRoots.length === 0) {
@@ -71,16 +68,17 @@ export function buildTree(model: UsageModel): RootNode {
 
 interface Draft {
 	folders: Map<string, Draft>;
-	files: Map<string, { uri: string; usages: Usage[] }>;
+	/** Keyed by URI: two files can share a path (e.g. local and remote copies). */
+	files: Map<string, { name: string; usages: Usage[] }>;
 }
 
 function newDraft(): Draft {
 	return { folders: new Map(), files: new Map() };
 }
 
-function insert(group: Draft, segments: string[], uri: string, usages: Usage[]): void {
+function insert(group: Draft, path: string[], uri: string, usages: Usage[]): void {
 	let dir = group;
-	for (const segment of segments.slice(0, -1)) {
+	for (const segment of path.slice(0, -1)) {
 		let next = dir.folders.get(segment);
 		if (!next) {
 			next = newDraft();
@@ -88,7 +86,7 @@ function insert(group: Draft, segments: string[], uri: string, usages: Usage[]):
 		}
 		dir = next;
 	}
-	dir.files.set(segments[segments.length - 1] ?? uri, { uri, usages });
+	dir.files.set(uri, { name: path[path.length - 1] ?? uri, usages });
 }
 
 function finishFolder(draft: Draft, name: string, groupKey: string, path: string, definitionUri: string | undefined): FolderNode {
@@ -120,7 +118,7 @@ function finishChildren(draft: Draft, groupKey: string, path: string, definition
 	}
 
 	const files: FileNode[] = [];
-	for (const [name, { uri, usages }] of draft.files) {
+	for (const [uri, { name, usages }] of draft.files) {
 		const sorted = [...usages].sort(compareUsages);
 		files.push({
 			kind: 'file',
@@ -134,20 +132,8 @@ function finishChildren(draft: Draft, groupKey: string, path: string, definition
 	}
 
 	folders.sort((a, b) => compareNames(a.name, b.name));
-	files.sort((a, b) => compareNames(a.name, b.name));
+	files.sort((a, b) => compareNames(a.name, b.name) || compareNames(a.uri, b.uri));
 	return [...folders, ...files];
-}
-
-function findRoot(uri: string, roots: WorkspaceRoot[]): WorkspaceRoot | undefined {
-	// Longest match wins, in case one workspace folder is nested in another.
-	let best: WorkspaceRoot | undefined;
-	for (const root of roots) {
-		const prefix = trimSlash(root.uri) + '/';
-		if (uri.startsWith(prefix) && (!best || root.uri.length > best.uri.length)) {
-			best = root;
-		}
-	}
-	return best;
 }
 
 function compareUsages(a: Usage, b: Usage): number {
@@ -158,27 +144,6 @@ const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'bas
 
 function compareNames(a: string, b: string): number {
 	return collator.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
-}
-
-function trimSlash(uri: string): string {
-	return uri.endsWith('/') ? uri.slice(0, -1) : uri;
-}
-
-/** 'file:///c%3A/x/y.ts' -> '/c%3A/x/y.ts' */
-function stripAuthority(uri: string): string {
-	return uri.replace(/^[a-z][\w+.-]*:\/\/[^/]*/i, '');
-}
-
-function pathSegments(path: string): string[] {
-	return path.split('/').filter((s) => s.length > 0).map(decode);
-}
-
-function decode(segment: string): string {
-	try {
-		return decodeURIComponent(segment);
-	} catch {
-		return segment;
-	}
 }
 
 function join(path: string, segment: string): string {

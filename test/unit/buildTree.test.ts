@@ -122,15 +122,19 @@ describe('buildTree', () => {
 		const api = 'file:///work/api';
 		const web = 'file:///work/web';
 		const docs = 'file:///work/docs';
+		// roots[0] is web, roots[1] is api.
 		const roots = [
 			{ name: 'web', uri: web },
 			{ name: 'api', uri: api },
 			{ name: 'docs', uri: docs },
 		];
 
+		const inWeb = { root: 0, rootUri: web };
+		const inApi = { root: 1, rootUri: api };
+
 		it('shows one node per workspace folder in workspace order, skipping folders with no usages', () => {
 			const tree = buildTree(model(
-				[usage('server.ts', 1, { root: api }), usage('src/app.ts', 2, { root: web }), usage('src/app.ts', 3, { root: web })],
+				[usage('server.ts', 1, inApi), usage('src/app.ts', 2, inWeb), usage('src/app.ts', 3, inWeb)],
 				{ workspaceRoots: roots },
 			));
 
@@ -142,30 +146,14 @@ describe('buildTree', () => {
 		});
 
 		it("doesn't collapse a workspace folder into its only subfolder", () => {
-			const tree = buildTree(model([usage('src/app.ts', 1, { root: web })], { workspaceRoots: roots }));
+			const tree = buildTree(model([usage('src/app.ts', 1, inWeb)], { workspaceRoots: roots }));
 			expect(shape(tree)).toEqual([['web (1)', [['src (1)', ['app.ts (1)']]]]]);
-		});
-
-		it('matches the most specific root when workspace folders are nested', () => {
-			const inner = `${web}/packages/ui`;
-			const tree = buildTree(model(
-				[usage('button.ts', 1, { root: inner })],
-				{ workspaceRoots: [{ name: 'web', uri: web }, { name: 'ui', uri: inner }] },
-			));
-			expect(shape(tree)).toEqual([['ui (1)', ['button.ts (1)']]]);
-		});
-
-		it('does not treat a root as a prefix of a sibling folder name', () => {
-			const tree = buildTree(model(
-				[usage('file:///work/app-old/x.ts', 1)],
-			));
-			expect(tree.children.map((n) => n.name)).toEqual(['Other']);
 		});
 
 		it('puts files outside every root under an Other node', () => {
 			const tree = buildTree(model([
 				usage('src/a.ts', 1),
-				usage('file:///usr/lib/node_modules/pkg/index.d.ts', 7),
+				usage('/usr/lib/node_modules/pkg/index.d.ts', 7, { root: 'external' }),
 			]));
 
 			expect(shape(tree)).toEqual([
@@ -176,20 +164,32 @@ describe('buildTree', () => {
 			expect(other.kind === 'folder' && other.group).toBe('external');
 		});
 
+		it('treats a root index with no matching workspace folder as external', () => {
+			const tree = buildTree(model([usage('a.ts', 1, { root: 5 })]));
+			expect(shape(tree)).toEqual([['Other (1)', ['a.ts (1)']]]);
+		});
+
 		it('shows paths directly under the root when no workspace is open', () => {
 			const tree = buildTree(model(
-				[usage('file:///home/me/scratch/a.ts', 1)],
+				[usage('/home/me/scratch/a.ts', 1, { root: 'external' })],
 				{ workspaceRoots: [] },
 			));
 			expect(shape(tree)).toEqual([['home/me/scratch (1)', ['a.ts (1)']]]);
 		});
 
-		it('handles a root URI with a trailing slash and decodes encoded names', () => {
-			const tree = buildTree(model(
-				[usage(`${ROOT}/my%20folder/file%231.ts`, 1)],
-				{ workspaceRoots: [{ name: 'app', uri: `${ROOT}/` }] },
-			));
-			expect(shape(tree)).toEqual([['my folder (1)', ['file#1.ts (1)']]]);
+		it('keeps files apart when different URIs share a path', () => {
+			const tree = buildTree(model([
+				usage('/x/a.ts', 1, { root: 'external', uri: 'file:///x/a.ts' }),
+				usage('/x/a.ts', 2, { root: 'external', uri: 'file:///x/a.ts' }),
+				usage('/x/a.ts', 3, { root: 'external', uri: 'file:///x/a.ts' }),
+				usage('/x/a.ts', 4, { root: 'external', uri: 'vscode-remote://ssh-remote+box/x/a.ts' }),
+				usage('/x/a.ts', 5, { root: 'external', uri: 'vscode-remote://ssh-remote+box/x/a.ts' }),
+			]));
+
+			expect(tree.count).toBe(5);
+			const files = allFiles(tree.children);
+			expect(files.map((f) => [f.name, f.count])).toEqual([['a.ts', 3], ['a.ts', 2]]);
+			expect(new Set(files.map((f) => f.id)).size).toBe(2);
 		});
 	});
 });
