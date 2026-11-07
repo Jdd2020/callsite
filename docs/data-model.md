@@ -7,7 +7,7 @@ There are two halves:
 - **Input**: `UsageModel` and what it contains. The glue builds it from the language server results.
 - **Output**: `RootNode` and the tree below it. `buildTree` builds it, and the sidebar renders it.
 
-`Cursor` points into the output, and `Draft` exists only while `buildTree` runs.
+`Cursor` points into the output, `UsageLabel` is how a usage line is shown in the tree, and `Draft` exists only while `buildTree` runs.
 
 ## Type map
 
@@ -74,6 +74,10 @@ classDiagram
         readonly fileIndex: number
         readonly usageIndex: number
     }
+    class UsageLabel {
+        label: string
+        highlights: list of start-end pairs
+    }
     class Draft {
         <<internal>>
         folders: Map of name to Draft
@@ -94,6 +98,7 @@ classDiagram
     FileNode *-- "1..*" Usage
 
     Cursor ..> FileNode : fileIndex into fileOrder(root)
+    Usage ..> UsageLabel : usageLabel(usage)
     Draft *-- "*" Draft
 ```
 
