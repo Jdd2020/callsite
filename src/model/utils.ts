@@ -1,6 +1,6 @@
 /**
  * @file Small shared helpers for the model: comparators, location matching,
- * path joining and splitting, and index checks. Helpers big enough to stand alone get their own file.
+ * path and line splitting, path joining, and index checks. Helpers big enough to stand alone get their own file.
  */
 import type { FileNode, Location, Usage } from '@/model/types';
 
@@ -62,6 +62,17 @@ export function sameStart(a: Location, b: Location): boolean {
  */
 export function splitPath(path: string): string[] {
 	return path.split('/').filter((s) => s.length > 0);
+}
+
+/**
+ * Splits text into lines the way VS Code numbers them: '\r\n', '\r' and
+ * '\n' all end a line.
+ *
+ * @param {string} text - The file's text.
+ * @returns {string[]} Its lines, without line endings.
+ */
+export function splitLines(text: string): string[] {
+	return text.split(/\r\n|\r|\n/);
 }
 
 /**

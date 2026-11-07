@@ -3,7 +3,7 @@
  * buildTree and order.
  */
 import { describe, expect, it } from 'vitest';
-import { sameStart } from '@/model/utils';
+import { sameStart, splitLines } from '@/model/utils';
 import { location } from '@test/unit/factories';
 
 describe('sameStart', () => {
@@ -17,5 +17,15 @@ describe('sameStart', () => {
 		expect(sameStart(location('a.ts', 3), location('a.ts', 4))).toBe(false);
 		expect(sameStart(location('a.ts', 3), location('a.ts', 3, { char: 1 }))).toBe(false);
 		expect(sameStart(location('a.ts', 3), location('b.ts', 3))).toBe(false);
+	});
+});
+
+describe('splitLines', () => {
+	it('ends lines at \\n, \\r\\n and \\r, like VS Code', () => {
+		expect(splitLines('a\nb\r\nc\rd')).toEqual(['a', 'b', 'c', 'd']);
+	});
+
+	it('keeps a trailing empty line', () => {
+		expect(splitLines('a\n')).toEqual(['a', '']);
 	});
 });

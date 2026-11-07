@@ -41,7 +41,7 @@ flowchart LR
 
 ## Data flow
 
-1. **Collect** (glue): `callsite.showUsages` calls `collectUsages`, which asks the language servers for references and the definition, opens each file once to read line text, and resolves each location's workspace root (`getWorkspaceFolder`) and path segments (`pathSegments`). The result is one `UsageModel`.
+1. **Collect** (glue): `callsite.showUsages` calls `collectUsages`, which asks the language servers for references and the definition, reads each file once for line text (from its open document or from disk, without opening it as a document), and resolves each location's workspace root (`getWorkspaceFolder`) and path segments (`pathSegments`). The result is one `UsageModel`.
 2. **Build** (model): `buildTree(model)` returns a `RootNode`. See [buildTree](build-tree.md).
 3. **Render** (glue): the tree provider hands each node to `treeItems.ts`, which builds its `TreeItem` with labels from `labels.ts`. Usage lines are added under each file by the provider; they aren't model nodes.
 4. **Navigate** (model + glue): `fileOrder(root)` flattens the tree into the files in display order. The stepping functions take a `Cursor` and return a new one, and the glue opens, reveals and decorates whatever the cursor points at.
@@ -66,6 +66,7 @@ src/
   vscode/
     showUsages.ts    the callsite.showUsages command: collect, build, show
     references.ts    collectUsages: language server results -> UsageModel
+    lineText.ts      readLines: line text for each reference
     convert.ts       vscode.Range / Location <-> model Range / Location
     treeProvider.ts  UsagesTreeProvider (TreeDataProvider)
     treeItems.ts     a TreeItem per node kind
