@@ -1,0 +1,111 @@
+# Runs every check on a clean machine: lint, unit tests, type checks and
+# packaging in one job, and integration tests in a real VS Code in another,
+# against both the oldest supported VS Code (package.json engines) and stable.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to the same PR cancels the older run. Runs on main are never
+# cancelled, so every commit there gets a result.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The lint rules are warnings locally; CI fails on any of them.
+      - name: Lint
+        run: npm run lint -- --max-warnings 0
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      # vsce runs vscode:prepublish (type checks, lint, production bundle),
+      # so this step is also the type check.
+      - name: Type check and package
+        run: npx --yes @vscode/vsce@4.1.0 package --out callsite.vsix
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: callsite-vsix
+          path: callsite.vsix
+          if-no-files-found: error
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # 1.90.0 is the minimum in package.json engines.vscode.
+        vscode: ['1.90.0', stable]
+    name: integration (VS Code ${{ matrix.vscode }})
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Most of these ship with the runner image; skip apt entirely if so.
+      - name: Install VS Code system libraries
+        run: |
+          missing=$(for p in libnss3 libgtk-3-0t64 libgbm1 libasound2t64 libxss1 libxkbfile1 xvfb; do
+            dpkg -s "$p" >/dev/null 2>&1 || echo "$p"
+          done)
+          if [ -n "$missing" ]; then
+            echo "Installing: $missing"
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends $missing
+          fi
+
+      # Key the .vscode-test cache on the exact version, so a new stable
+      # release refreshes it.
+      - name: Resolve the VS Code version
+        id: vscode
+        # Explicit bash adds pipefail, so a failed curl fails the step.
+        shell: bash
+        run: |
+          v='${{ matrix.vscode }}'
+          if [ "$v" = stable ]; then
+            v=$(curl -fsSL https://update.code.visualstudio.com/api/releases/stable | jq -er '.[0]')
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Cache VS Code
+        uses: actions/cache@v6
+        with:
+          path: .vscode-test
+          key: vscode-test-${{ runner.os }}-${{ steps.vscode.outputs.version }}
+
+      # Build directly instead of through pretest:integration, which repeats
+      # the type checks and lint the build job already ran. The production
+      # bundle is what the .vsix ships.
+      - name: Build
+        run: npm run compile-tests && node esbuild.js --production
+
+      - name: Integration tests
+        run: xvfb-run -a npx vscode-test
+        env:
+          VSCODE_VERSION: ${{ steps.vscode.outputs.version }}
