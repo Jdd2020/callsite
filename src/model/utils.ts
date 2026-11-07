@@ -1,8 +1,8 @@
 /**
- * @file Small shared helpers for the model: comparators, path joining and
- * splitting, and index checks. Helpers big enough to stand alone get their own file.
+ * @file Small shared helpers for the model: comparators, location matching,
+ * path joining and splitting, and index checks. Helpers big enough to stand alone get their own file.
  */
-import type { FileNode, Usage } from '@/model/types';
+import type { FileNode, Location, Usage } from '@/model/types';
 
 /**
  * Orders usages by start line, then start character.
@@ -39,6 +39,19 @@ export function compareNames(a: string, b: string): number {
  */
 export function joinPath(path: string, segment: string): string {
 	return path ? `${path}/${segment}` : segment;
+}
+
+/**
+ * Whether two locations are in the same file and start at the same place.
+ * Ends are ignored: a definition provider may report the symbol's name or
+ * its whole declaration, but both start where a reference to it would.
+ *
+ * @param {Location} a - First location.
+ * @param {Location} b - Second location.
+ * @returns {boolean} True if they share a URI and start position.
+ */
+export function sameStart(a: Location, b: Location): boolean {
+	return a.uri === b.uri && a.range.startLine === b.range.startLine && a.range.startChar === b.range.startChar;
 }
 
 /**

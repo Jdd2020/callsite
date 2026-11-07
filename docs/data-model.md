@@ -193,7 +193,7 @@ This table records how each field is filled (in `src/vscode/references.ts`) and 
 | `Usage.rootIndex` | `vscode.workspace.getWorkspaceFolder(uri)?.index` | Which group the file lands in |
 | `Usage.path` | `pathSegments(uri.path, folder?.uri.path)`: the root's segment count is dropped, so path casing doesn't matter | Folder hierarchy |
 | `Usage.lineText` | `openTextDocument(uri).lineAt(range.start.line).text`, each file opened once in parallel; `''` if it can't be opened | Usage lines: `L42: text`, trimmed, with the usage highlighted (`usageLabel`) |
-| `Usage.isDefinition` | Same URI and start position as the definition | Definition file icon |
+| `Usage.isDefinition` | Same URI and start position (`sameStart`) as any definition provider result, not only the first | Definition file icon |
 | `FolderNode.count`, `FileNode.count` | computed by `buildTree` | Node `description` |
 | `FolderNode.group` | computed by `buildTree` | Icon: `root-folder` for a workspace, `folder-library` for **Other**, the folder icon otherwise |
 | `FolderNode.id`, `FileNode.id` | computed by `buildTree` | `TreeItem.id`, which keeps expansion state across refreshes |

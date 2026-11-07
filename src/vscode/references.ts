@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import { pathSegments } from '@/model/paths';
 import type { Location, Usage, UsageModel } from '@/model/types';
+import { sameStart } from '@/model/utils';
 import { toLocation, toRange } from '@/vscode/convert';
 
 /**
@@ -21,13 +22,16 @@ export async function collectUsages(document: vscode.TextDocument, position: vsc
 		vscode.commands.executeCommand<vscode.Location[] | undefined>('vscode.executeReferenceProvider', document.uri, position),
 		vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[] | undefined>('vscode.executeDefinitionProvider', document.uri, position),
 	]);
-	const definition = definitions.length > 0 ? toLocation(definitions[0]) : undefined;
+	// A symbol can have several definitions (merged declarations, a .d.ts
+	// and its implementation). The model shows the first; usages at any of
+	// them are flagged.
+	const definitionLocations = definitions.map(toLocation);
 	const documents = await openDocuments(references);
 
 	return {
 		symbol: document.getText(wordRange),
-		definition,
-		usages: references.map((ref) => toUsage(ref, documents.get(ref.uri.toString()), definition)),
+		definition: definitionLocations[0],
+		usages: references.map((ref) => toUsage(ref, documents.get(ref.uri.toString()), definitionLocations)),
 		workspaceRoots: (vscode.workspace.workspaceFolders ?? []).map((folder) => ({ name: folder.name, uri: folder.uri.toString() })),
 	};
 }
@@ -56,10 +60,10 @@ async function openDocuments(references: vscode.Location[]): Promise<Map<string,
  *
  * @param {vscode.Location} ref - The reference.
  * @param {vscode.TextDocument | undefined} document - The file it's in, if it could be opened.
- * @param {Location | undefined} definition - Where the symbol is defined.
+ * @param {Location[]} definitions - Where the symbol is defined.
  * @returns {Usage} The usage.
  */
-function toUsage(ref: vscode.Location, document: vscode.TextDocument | undefined, definition: Location | undefined): Usage {
+function toUsage(ref: vscode.Location, document: vscode.TextDocument | undefined, definitions: Location[]): Usage {
 	const uri = ref.uri.toString();
 	const range = toRange(ref.range);
 	const folder = vscode.workspace.getWorkspaceFolder(ref.uri);
@@ -70,9 +74,6 @@ function toUsage(ref: vscode.Location, document: vscode.TextDocument | undefined
 		rootIndex: folder?.index,
 		path: pathSegments(ref.uri.path, folder?.uri.path),
 		lineText: document && line < document.lineCount ? document.lineAt(line).text : '',
-		isDefinition: definition !== undefined
-			&& definition.uri === uri
-			&& definition.range.startLine === range.startLine
-			&& definition.range.startChar === range.startChar,
+		isDefinition: definitions.some((definition) => sameStart(definition, { uri, range })),
 	};
 }
