@@ -38,6 +38,31 @@ describe('usageLabel', () => {
 		expect(usageLabel(multiline).highlights).toEqual([]);
 	});
 
+	it('clips a long line around the usage, keeping the highlight on it', () => {
+		const lineText = `${'a'.repeat(600)}foo${'b'.repeat(600)}`;
+		const { label, highlights } = usageLabel(usage('a.ts', 0, { char: 600, lineText }));
+		expect(label.startsWith('L1: …')).toBe(true);
+		expect(label.endsWith('…')).toBe(true);
+		expect(label.length).toBe('L1: '.length + 200 + 2);
+		expect(label.slice(...highlights[0])).toBe('foo');
+	});
+
+	it('clips only the end when the usage is near the start of a long line', () => {
+		const lineText = `  foo${'b'.repeat(500)}`;
+		const { label, highlights } = usageLabel(usage('a.ts', 0, { char: 2, lineText }));
+		expect(label.startsWith('L1: foo')).toBe(true);
+		expect(label.endsWith('…')).toBe(true);
+		expect(label.slice(...highlights[0])).toBe('foo');
+	});
+
+	it('clips only the start when the usage is near the end of a long line', () => {
+		const lineText = `${'a'.repeat(500)}foo`;
+		const { label, highlights } = usageLabel(usage('a.ts', 0, { char: 500, lineText }));
+		expect(label.startsWith('L1: …')).toBe(true);
+		expect(label.endsWith('foo')).toBe(true);
+		expect(label.slice(...highlights[0])).toBe('foo');
+	});
+
 	it('clamps a highlight that runs past the line text', () => {
 		const { label, highlights } = usageLabel(usage('a.ts', 0, { char: 1, lineText: 'xfo' }));
 		expect(label.slice(...highlights[0])).toBe('fo');

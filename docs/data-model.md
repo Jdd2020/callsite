@@ -201,4 +201,4 @@ This table records how each field is filled (in `src/vscode/references.ts`) and 
 
 ### `UsageLabel` (`types/usageLabel.ts`)
 
-What `usageLabel(usage)` returns, shaped like `vscode.TreeItemLabel`: `label` is `L<line>: <trimmed text>`, and `highlights` holds one `[start, end)` span over the usage in that label, or nothing when the usage spans several lines.
+What `usageLabel(usage)` returns, shaped like `vscode.TreeItemLabel`: `label` is `L<line>: <trimmed text>`, clipped to 200 characters around the usage (with `…` where text was cut) on long lines, and `highlights` holds one `[start, end)` span over the usage in that label, or nothing when the usage spans several lines.
