@@ -1,4 +1,5 @@
 import type { FileNode, RootNode, TreeNode } from '@/model/types';
+import { hasFile } from '@/model/utils';
 
 /**
  * Position in the results. -1 means "nothing selected yet". Cursors are
@@ -33,19 +34,9 @@ export function fileOrder(root: RootNode): FileNode[] {
 }
 
 // Cursors can outlive the results they point into (a filter or refresh
-// rebuilds the tree with fewer files), so every entry point treats a file
-// index past the end as "nothing selected" and keeps usage indexes in range.
-
-/**
- * Whether `fileIndex` points at a file in `files`.
- *
- * @param {FileNode[]} files - Files in display order.
- * @param {number} fileIndex - Index to check.
- * @returns {boolean} True if the index is in range.
- */
-function hasFile(files: FileNode[], fileIndex: number): boolean {
-	return fileIndex >= 0 && fileIndex < files.length;
-}
+// rebuilds the tree with fewer files), so every entry point checks hasFile:
+// a file index past the end means "nothing selected", and usage indexes
+// are kept in range.
 
 /**
  * Index of the next file, wrapping from the last to the first.

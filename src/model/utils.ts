@@ -1,4 +1,4 @@
-import type { Usage } from '@/model/types';
+import type { FileNode, Usage } from '@/model/types';
 
 /**
  * Orders usages by start line, then start character.
@@ -35,4 +35,15 @@ export function compareNames(a: string, b: string): number {
  */
 export function joinPath(path: string, segment: string): string {
 	return path ? `${path}/${segment}` : segment;
+}
+
+/**
+ * Whether `fileIndex` points at a file in `files`.
+ *
+ * @param {FileNode[]} files - Files in display order.
+ * @param {number} fileIndex - Index to check.
+ * @returns {boolean} True if the index is in range.
+ */
+export function hasFile(files: FileNode[], fileIndex: number): boolean {
+	return fileIndex >= 0 && fileIndex < files.length;
 }
