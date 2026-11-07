@@ -51,6 +51,8 @@ References++ by Johannes Rieken (microsoft/vscode-extension-samples, `contentpro
 
 ## Conventions
 
+- Architecture docs live in `docs/`: `docs/README.md` (layers and data flow), `docs/data-model.md` (every model type and field mapping) and `docs/build-tree.md` (how `buildTree` works). Update them in the same change as any change to the model's types or tree-building rules.
+
 - Keep pure logic (building the folder tree, counts, grouping, excerpt formatting, filtering) in modules with no `vscode` import, so it is unit-testable with Vitest.
 - Keep VS Code API glue thin.
 - Use absolute imports: `@/` for `src/` (`@/model/types`) and `@test/` for `test/` (`@test/unit/factories`), not relative paths. The aliases are defined in `tsconfig.json` `paths` and repeated in `vitest.config.mts` `resolve.alias`; keep them in sync. esbuild reads the tsconfig, but `tsc` doesn't rewrite aliases in its output, so files compiled to `out/` (the integration tests in `test/integration`) must use relative imports.
