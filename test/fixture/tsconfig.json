@@ -1,7 +1,11 @@
 {
     // A small project for the integration tests. The tsconfig makes the
     // TypeScript server load every file, so references cover them all.
+    // npm run check-types type-checks it, so a broken fixture fails there
+    // rather than as missing references.
     "compilerOptions": {
+        // Don't pick up the extension's @types (node, mocha, vscode).
+        "types": [],
         "target": "ES2022",
         "module": "ESNext",
         "moduleResolution": "Bundler",
