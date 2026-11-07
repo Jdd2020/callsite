@@ -20,6 +20,16 @@ export function toRange(range: vscode.Range): Range {
 }
 
 /**
+ * A model Range as a vscode.Range.
+ *
+ * @param {Range} range - The model range.
+ * @returns {vscode.Range} The same span.
+ */
+export function fromRange(range: Range): vscode.Range {
+	return new vscode.Range(range.startLine, range.startChar, range.endLine, range.endChar);
+}
+
+/**
  * A definition result as a plain model Location. Definition providers
  * return either Locations or LocationLinks; for a link, the selection
  * range is the symbol's name rather than its whole declaration.
