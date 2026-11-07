@@ -5,6 +5,7 @@
  */
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import type { CallsiteApi } from '../../src/extension';
 import type { FolderNode, RootNode, TreeNode } from '../../src/model/types';
 
 /** Files in the fixture that reference total. */
@@ -40,6 +41,21 @@ suite('Show Usages', () => {
 			['invoice.ts', 3, false],
 			['total.ts', 1, true],
 		]);
+
+		// Clicking a usage line opens its file with the usage selected.
+		const ext = vscode.extensions.all.find((e) => e.packageJSON.name === 'callsite');
+		const { tree } = ext!.exports as CallsiteApi;
+		const invoice = files[0];
+		const line = tree.getChildren(invoice)[1];
+		const command = tree.getTreeItem(line).command;
+		assert.ok(command, 'usage lines should have a click command');
+		await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
+
+		const opened = vscode.window.activeTextEditor;
+		assert.ok(opened, 'clicking a usage line opened no editor');
+		assert.strictEqual(opened.document.uri.toString(), invoice.uri);
+		const { startLine, startChar, endLine, endChar } = invoice.usages[1].range;
+		assert.ok(opened.selection.isEqual(new vscode.Selection(startLine, startChar, endLine, endChar)), 'the usage should be selected');
 	});
 });
 

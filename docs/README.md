@@ -52,7 +52,7 @@ Every later view (v2 excerpts, v3 impact map) also starts from the `UsageModel`,
 
 ```
 src/
-  extension.ts       activate: creates the tree view, registers commands
+  extension.ts       activate: creates the tree view, registers commands, returns { tree } for the tests
   model/
     buildTree.ts     UsageModel -> RootNode
     order.ts         display order, next/prev file and usage, NO_CURSOR

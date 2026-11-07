@@ -6,19 +6,25 @@ import * as vscode from 'vscode';
 import { createShowUsages } from '@/vscode/showUsages';
 import { UsagesTreeProvider } from '@/vscode/treeProvider';
 
+/** What activate() returns as the extension's exports. The integration tests use it to inspect the tree. */
+export interface CallsiteApi {
+	tree: UsagesTreeProvider;
+}
+
 /**
  * Called by VS Code the first time a Callsite command or view is used.
  *
  * @param {vscode.ExtensionContext} context - Holds subscriptions disposed on deactivate.
- * @returns {void}
+ * @returns {CallsiteApi} The extension's exports.
  */
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext): CallsiteApi {
 	const tree = new UsagesTreeProvider();
 	context.subscriptions.push(
 		tree,
 		vscode.window.createTreeView('callsite.usages', { treeDataProvider: tree, showCollapseAll: true }),
 		vscode.commands.registerCommand('callsite.showUsages', createShowUsages(tree)),
 	);
+	return { tree };
 }
 
 /**
