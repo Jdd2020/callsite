@@ -48,15 +48,15 @@ export function location(path: string, line: number, opts: PlaceOpts = {}): Loca
  *
  * @param {string} path - File path, '/'-separated; becomes the usage's path segments.
  * @param {number} line - Zero-based line number.
- * @param {PlaceOpts & { isDefinition?: boolean }} [opts] - Placement, plus whether it's the definition.
+ * @param {PlaceOpts & { isDefinition?: boolean; lineText?: string }} [opts] - Placement, whether it's the definition, and the line's text.
  * @returns {Usage} The usage, with uri, rootIndex and path describing the same file.
  */
-export function usage(path: string, line: number, opts: PlaceOpts & { isDefinition?: boolean } = {}): Usage {
+export function usage(path: string, line: number, opts: PlaceOpts & { isDefinition?: boolean; lineText?: string } = {}): Usage {
 	return {
 		...location(path, line, opts),
 		rootIndex: opts.root === 'external' ? undefined : opts.root ?? 0,
 		path: path.split('/').filter((s) => s.length > 0),
-		lineText: `line ${line}`,
+		lineText: opts.lineText ?? `line ${line}`,
 		isDefinition: opts.isDefinition ?? false,
 	};
 }

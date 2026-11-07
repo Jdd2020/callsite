@@ -1,6 +1,6 @@
 /**
  * @file Small shared helpers for the model: comparators, path joining and
- * index checks. Helpers big enough to stand alone get their own file.
+ * splitting, and index checks. Helpers big enough to stand alone get their own file.
  */
 import type { FileNode, Usage } from '@/model/types';
 
@@ -39,6 +39,16 @@ export function compareNames(a: string, b: string): number {
  */
 export function joinPath(path: string, segment: string): string {
 	return path ? `${path}/${segment}` : segment;
+}
+
+/**
+ * Splits a '/'-separated path into its non-empty segments.
+ *
+ * @param {string} path - The path, e.g. '/work/app/'.
+ * @returns {string[]} The segments, e.g. ['work', 'app'].
+ */
+export function splitPath(path: string): string[] {
+	return path.split('/').filter((s) => s.length > 0);
 }
 
 /**

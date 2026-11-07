@@ -12,5 +12,6 @@ export type { Range } from '@/model/types/range';
 export type { RootNode } from '@/model/types/rootNode';
 export type { TreeNode } from '@/model/types/treeNode';
 export type { Usage } from '@/model/types/usage';
+export type { UsageLabel } from '@/model/types/usageLabel';
 export type { UsageModel } from '@/model/types/usageModel';
 export type { WorkspaceRoot } from '@/model/types/workspaceRoot';
