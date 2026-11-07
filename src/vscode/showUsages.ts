@@ -24,17 +24,21 @@ export function createShowUsages(tree: UsagesTreeProvider): () => Promise<RootNo
 			return undefined;
 		}
 
+		// Check for a symbol before focusing the view, so a miss leaves focus in the editor.
+		const position = editor.selection.active;
+		const wordRange = editor.document.getWordRangeAtPosition(position);
+		if (!wordRange) {
+			void vscode.window.showInformationMessage('Put the cursor on a symbol to find its usages.');
+			return undefined;
+		}
+
 		const search = ++latest;
 		await vscode.commands.executeCommand('callsite.usages.focus');
 		const model = await vscode.window.withProgress(
 			{ location: { viewId: 'callsite.usages' } },
-			() => collectUsages(editor.document, editor.selection.active),
+			() => collectUsages(editor.document, position, wordRange),
 		);
 		if (search !== latest) {
-			return undefined;
-		}
-		if (!model) {
-			void vscode.window.showInformationMessage('Put the cursor on a symbol to find its usages.');
 			return undefined;
 		}
 

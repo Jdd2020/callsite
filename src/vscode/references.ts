@@ -13,14 +13,10 @@ import { toLocation, toRange } from '@/vscode/convert';
  *
  * @param {vscode.TextDocument} document - The document holding the symbol.
  * @param {vscode.Position} position - Where the cursor is.
- * @returns {Promise<UsageModel | undefined>} The results (possibly with no usages), or undefined when there's no symbol at the position.
+ * @param {vscode.Range} wordRange - The symbol's range at the cursor, from getWordRangeAtPosition.
+ * @returns {Promise<UsageModel>} The results, possibly with no usages.
  */
-export async function collectUsages(document: vscode.TextDocument, position: vscode.Position): Promise<UsageModel | undefined> {
-	const wordRange = document.getWordRangeAtPosition(position);
-	if (!wordRange) {
-		return undefined;
-	}
-
+export async function collectUsages(document: vscode.TextDocument, position: vscode.Position, wordRange: vscode.Range): Promise<UsageModel> {
 	const [references = [], definitions = []] = await Promise.all([
 		vscode.commands.executeCommand<vscode.Location[] | undefined>('vscode.executeReferenceProvider', document.uri, position),
 		vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[] | undefined>('vscode.executeDefinitionProvider', document.uri, position),
