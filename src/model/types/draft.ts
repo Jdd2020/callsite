@@ -1,3 +1,6 @@
+/**
+ * @file The Draft type: a folder under construction inside buildTree.
+ */
 import type { Usage } from '@/model/types/usage';
 
 /** A folder being built: subfolders by name and files by URI. Internal to buildTree. */

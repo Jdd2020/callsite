@@ -1,3 +1,7 @@
+/**
+ * @file Unit tests for order.ts: display order of files, and next/previous
+ * file and usage stepping, including wraparound and out-of-date cursors.
+ */
 import { describe, expect, it } from 'vitest';
 import { buildTree } from '@/model/buildTree';
 import { NO_CURSOR, fileOrder, nextFile, nextUsage, prevFile, prevUsage } from '@/model/order';

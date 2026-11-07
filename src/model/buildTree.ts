@@ -1,3 +1,8 @@
+/**
+ * @file buildTree: turns a UsageModel into the sidebar tree. Removes
+ * duplicate locations, groups files by workspace root, and hands each group
+ * to the tree helpers in ./tree to collapse, sort and count.
+ */
 import { insertFile, newDraft } from '@/model/tree/draft';
 import { finishChildren, finishFolder } from '@/model/tree/finish';
 import type { Draft, RootNode, TreeNode, Usage, UsageModel } from '@/model/types';

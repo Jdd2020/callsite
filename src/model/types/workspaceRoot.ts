@@ -1,3 +1,7 @@
+/**
+ * @file The WorkspaceRoot type: a workspace folder's name and URI.
+ */
+
 /** A workspace folder that results can belong to. */
 export interface WorkspaceRoot {
 	name: string;

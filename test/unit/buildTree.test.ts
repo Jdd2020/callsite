@@ -1,3 +1,7 @@
+/**
+ * @file Unit tests for buildTree: counts, folder-chain collapsing, sorting,
+ * the definition flag, deduplication and workspace-root grouping.
+ */
 import { describe, expect, it } from 'vitest';
 import { buildTree } from '@/model/buildTree';
 import { location, model, root, usage } from '@test/unit/factories';

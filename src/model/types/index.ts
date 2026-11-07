@@ -1,6 +1,8 @@
-// Plain data model that every view renders from. Nothing here may import
-// 'vscode', so the logic built on it can be unit-tested without VS Code.
-// One type per file; import from '@/model/types'.
+/**
+ * @file The plain data model that every view renders from. Nothing here may
+ * import 'vscode', so the logic built on it can be unit-tested without VS
+ * Code. One type per file; import them from '@/model/types'.
+ */
 export type { Cursor } from '@/model/types/cursor';
 export type { Draft } from '@/model/types/draft';
 export type { FileNode } from '@/model/types/fileNode';

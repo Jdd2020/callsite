@@ -1,7 +1,9 @@
-// Factories for the model types tests build as input. Each fills in
-// defaults and keeps related fields consistent (a usage's uri, rootIndex
-// and path all describe the same file), so a test only states what it's
-// about. Output types (tree nodes) have no factories: tests read those.
+/**
+ * @file Factories for the model types tests build as input. Each fills in
+ * defaults and keeps related fields consistent (a usage's uri, rootIndex and
+ * path all describe the same file), so a test only states what it's about.
+ * Output types (tree nodes) have no factories: tests read those.
+ */
 import type { Cursor, Location, Range, Usage, UsageModel, WorkspaceRoot } from '@/model/types';
 
 interface PlaceOpts {

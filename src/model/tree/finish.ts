@@ -1,3 +1,7 @@
+/**
+ * @file Finishing a folder draft into tree nodes: collapses single-child
+ * folder chains, sorts folders before files, and rolls up counts.
+ */
 import type { Draft, FileNode, FolderNode, TreeNode } from '@/model/types';
 import { compareNames, compareUsages, joinPath } from '@/model/utils';
 

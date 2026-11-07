@@ -1,3 +1,7 @@
+/**
+ * @file The UsageModel type: all results for one symbol, and the input
+ * every view renders from.
+ */
 import type { Location } from '@/model/types/location';
 import type { Usage } from '@/model/types/usage';
 import type { WorkspaceRoot } from '@/model/types/workspaceRoot';

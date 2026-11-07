@@ -1,4 +1,7 @@
-// Helpers for inspecting buildTree output. Inputs come from ./factories.
+/**
+ * @file Helpers for inspecting buildTree output. Inputs come from
+ * @test/unit/factories.
+ */
 import { fileOrder } from '@/model/order';
 import type { FileNode, FolderNode, RootNode, TreeNode } from '@/model/types';
 

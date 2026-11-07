@@ -1,3 +1,6 @@
+/**
+ * @file The FolderNode type: a folder or collapsed folder chain in the tree.
+ */
 import type { TreeNode } from '@/model/types/treeNode';
 
 /** A folder (or collapsed chain of folders) containing usages. */

@@ -1,3 +1,6 @@
+/**
+ * @file The Location type: a URI plus a range.
+ */
 import type { Range } from '@/model/types/range';
 
 /** A range in a file. */

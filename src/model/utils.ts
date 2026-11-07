@@ -1,3 +1,7 @@
+/**
+ * @file Small shared helpers for the model: comparators, path joining and
+ * index checks. Helpers big enough to stand alone get their own file.
+ */
 import type { FileNode, Usage } from '@/model/types';
 
 /**

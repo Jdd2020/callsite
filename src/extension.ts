@@ -1,3 +1,7 @@
+/**
+ * @file Extension entry point. VS Code calls activate() on first use and
+ * deactivate() on shutdown; commands, views and decorations are wired here.
+ */
 import * as vscode from 'vscode';
 
 /**

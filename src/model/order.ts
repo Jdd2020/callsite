@@ -1,3 +1,7 @@
+/**
+ * @file Navigation order: the files in display order, and next/previous
+ * file and usage stepping that rolls over between files and wraps at the ends.
+ */
 import type { Cursor, FileNode, RootNode, TreeNode } from '@/model/types';
 import { hasFile } from '@/model/utils';
 

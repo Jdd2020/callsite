@@ -1,3 +1,7 @@
+/**
+ * @file Building a folder draft: the mutable tree buildTree fills in before
+ * finish.ts turns it into finished nodes.
+ */
 import type { Draft, Usage } from '@/model/types';
 
 /**

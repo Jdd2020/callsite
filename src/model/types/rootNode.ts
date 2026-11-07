@@ -1,3 +1,6 @@
+/**
+ * @file The RootNode type: the top of the sidebar tree.
+ */
 import type { TreeNode } from '@/model/types/treeNode';
 
 /** Top of the sidebar tree: the symbol and its total usage count. */
