@@ -70,7 +70,7 @@ jobs:
       # Most of these ship with the runner image; skip apt entirely if so.
       - name: Install VS Code system libraries
         run: |
-          missing=$(for p in libnss3 libgtk-3-0 libgbm1 libasound2t64 libxss1 libxkbfile1 xvfb; do
+          missing=$(for p in libnss3 libgtk-3-0t64 libgbm1 libasound2t64 libxss1 libxkbfile1 xvfb; do
             dpkg -s "$p" >/dev/null 2>&1 || echo "$p"
           done)
           if [ -n "$missing" ]; then
