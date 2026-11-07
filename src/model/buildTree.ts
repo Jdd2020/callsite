@@ -11,6 +11,9 @@ const EXTERNAL_KEY = '<external>';
  * multi-root workspace gets one node per workspace folder. Files outside
  * every workspace folder go under an "Other" node, or straight under the
  * root when no workspace is open.
+ *
+ * @param {UsageModel} model - Results for one symbol, as normalized by the glue.
+ * @returns {RootNode} The tree, with counts rolled up to every folder and the root.
  */
 export function buildTree(model: UsageModel): RootNode {
 	// Providers sometimes report a location twice (e.g. the declaration from
@@ -82,10 +85,24 @@ interface Draft {
 	files: Map<string, { name: string; usages: Usage[] }>;
 }
 
+/**
+ * An empty folder draft.
+ *
+ * @returns {Draft} A draft with no folders or files.
+ */
 function newDraft(): Draft {
 	return { folders: new Map(), files: new Map() };
 }
 
+/**
+ * Adds a file to a draft, creating the folders on its path as needed.
+ *
+ * @param {Draft} group - The draft for the file's workspace root (or external group).
+ * @param {string[]} path - Decoded path segments, file name last.
+ * @param {string} uri - The file's URI, used as its key.
+ * @param {Usage[]} usages - The file's usages.
+ * @returns {void}
+ */
 function insert(group: Draft, path: string[], uri: string, usages: Usage[]): void {
 	let dir = group;
 	for (const segment of path.slice(0, -1)) {
@@ -99,6 +116,16 @@ function insert(group: Draft, path: string[], uri: string, usages: Usage[]): voi
 	dir.files.set(uri, { name: path[path.length - 1] ?? uri, usages });
 }
 
+/**
+ * Turns a folder draft into a folder node with its count rolled up.
+ *
+ * @param {Draft} draft - The folder's contents.
+ * @param {string} name - Display label (collapsed chains are joined with '/').
+ * @param {string} groupKey - Workspace root URI or the external key, used in the id.
+ * @param {string} path - Full path of the folder within its group, used in the id.
+ * @param {string | undefined} definitionUri - URI of the file holding the definition.
+ * @returns {FolderNode} The finished folder node.
+ */
 function finishFolder(draft: Draft, name: string, groupKey: string, path: string, definitionUri: string | undefined): FolderNode {
 	const children = finishChildren(draft, groupKey, path, definitionUri);
 	return {
@@ -110,6 +137,16 @@ function finishFolder(draft: Draft, name: string, groupKey: string, path: string
 	};
 }
 
+/**
+ * Finishes a draft's children: collapses single-child folder chains, sorts
+ * usages by position, and sorts folders before files by name.
+ *
+ * @param {Draft} draft - The folder whose children to finish.
+ * @param {string} groupKey - Workspace root URI or the external key, used in ids.
+ * @param {string} path - Path of `draft` within its group ('' at the top).
+ * @param {string | undefined} definitionUri - URI of the file holding the definition.
+ * @returns {TreeNode[]} Folder nodes followed by file nodes.
+ */
 function finishChildren(draft: Draft, groupKey: string, path: string, definitionUri: string | undefined): TreeNode[] {
 	const folders: FolderNode[] = [];
 	for (const [segment, child] of draft.folders) {
@@ -146,16 +183,39 @@ function finishChildren(draft: Draft, groupKey: string, path: string, definition
 	return [...folders, ...files];
 }
 
+/**
+ * Orders usages by start line, then start character.
+ *
+ * @param {Usage} a - First usage.
+ * @param {Usage} b - Second usage.
+ * @returns {number} Negative if `a` comes first, positive if `b` does, 0 if equal.
+ */
 function compareUsages(a: Usage, b: Usage): number {
 	return a.range.startLine - b.range.startLine || a.range.startChar - b.range.startChar;
 }
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
+/**
+ * Orders names ignoring case, with numbers in numeric order ('file2' before
+ * 'file10'). Names equal under that rule fall back to code-unit order, so
+ * sorting is stable across runs.
+ *
+ * @param {string} a - First name.
+ * @param {string} b - Second name.
+ * @returns {number} Negative if `a` comes first, positive if `b` does, 0 if identical.
+ */
 function compareNames(a: string, b: string): number {
 	return collator.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
 }
 
+/**
+ * Appends a segment to a '/'-separated path.
+ *
+ * @param {string} path - The path so far ('' for none).
+ * @param {string} segment - The segment to append.
+ * @returns {string} The joined path.
+ */
 function join(path: string, segment: string): string {
 	return path ? `${path}/${segment}` : segment;
 }
