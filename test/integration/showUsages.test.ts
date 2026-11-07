@@ -6,7 +6,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import type { CallsiteApi } from '../../src/extension';
-import type { FolderNode, RootNode, TreeNode } from '../../src/model/types';
+import type { FileNode, FolderNode, RootNode, TreeNode } from '../../src/model/types';
 
 /** Files in the fixture that reference total. */
 const EXPECTED_FILES = ['format.ts', 'invoice.ts', 'total.ts'];
@@ -42,6 +42,20 @@ suite('Show Usages', () => {
 			['total.ts', 1, true],
 		]);
 
+		// Line text comes from the open document for total.ts and from disk
+		// for the files that aren't open.
+		const utils = src.children[1] as FolderNode;
+		assert.deepStrictEqual(lineTexts(files[0]), [
+			"import { total } from './total';",
+			'return total(lines);',
+			'return total(lines) * 0.2;',
+		]);
+		assert.deepStrictEqual(lineTexts(utils.children[0] as FileNode), [
+			"import { total } from '../components/billing/total';",
+			'return `$${total(items)}`;',
+		]);
+		assert.deepStrictEqual(lineTexts(files[1]), ['export function total(items: number[]): number {']);
+
 		// Clicking a usage line opens its file with the usage selected.
 		const ext = vscode.extensions.all.find((e) => e.packageJSON.name === 'callsite');
 		const { tree } = ext!.exports as CallsiteApi;
@@ -67,6 +81,16 @@ suite('Show Usages', () => {
  */
 function names(nodes: TreeNode[]): string[] {
 	return nodes.map((n) => n.name);
+}
+
+/**
+ * A file's usage line texts, trimmed, in order.
+ *
+ * @param {FileNode} file - A file node.
+ * @returns {string[]} The trimmed line text of each usage.
+ */
+function lineTexts(file: FileNode): string[] {
+	return file.usages.map((u) => u.lineText.trim());
 }
 
 /**
