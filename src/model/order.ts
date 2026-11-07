@@ -1,15 +1,7 @@
-import type { FileNode, RootNode, TreeNode } from '@/model/types';
+import type { Cursor, FileNode, RootNode, TreeNode } from '@/model/types';
 import { hasFile } from '@/model/utils';
 
-/**
- * Position in the results. -1 means "nothing selected yet". Cursors are
- * values: the stepping functions return a new one rather than changing it.
- */
-export interface Cursor {
-	readonly fileIndex: number;
-	readonly usageIndex: number;
-}
-
+/** The cursor before anything is selected. Frozen, so it can be shared safely. */
 export const NO_CURSOR: Cursor = Object.freeze({ fileIndex: -1, usageIndex: -1 });
 
 /**

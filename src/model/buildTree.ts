@@ -1,6 +1,6 @@
-import { type Draft, insertFile, newDraft } from '@/model/tree/draft';
+import { insertFile, newDraft } from '@/model/tree/draft';
 import { finishChildren, finishFolder } from '@/model/tree/finish';
-import type { RootNode, TreeNode, Usage, UsageModel } from '@/model/types';
+import type { Draft, RootNode, TreeNode, Usage, UsageModel } from '@/model/types';
 
 const EXTERNAL_KEY = '<external>';
 

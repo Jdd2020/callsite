@@ -1,5 +1,4 @@
-import type { Draft } from '@/model/tree/draft';
-import type { FileNode, FolderNode, TreeNode } from '@/model/types';
+import type { Draft, FileNode, FolderNode, TreeNode } from '@/model/types';
 import { compareNames, compareUsages, joinPath } from '@/model/utils';
 
 /**

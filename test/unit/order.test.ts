@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTree } from '@/model/buildTree';
-import { NO_CURSOR, fileOrder, nextFile, nextUsage, prevFile, prevUsage, type Cursor } from '@/model/order';
+import { NO_CURSOR, fileOrder, nextFile, nextUsage, prevFile, prevUsage } from '@/model/order';
+import type { Cursor } from '@/model/types';
 import { cursorAt as at, model, usage } from '@test/unit/factories';
 
 // Displayed order: src/util/b.ts, src/a.ts, z.ts (folders before files).
