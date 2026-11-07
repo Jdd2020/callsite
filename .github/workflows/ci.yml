@@ -1,5 +1,6 @@
-# Runs every check on a clean machine: type checks, lint, bundle, unit tests,
-# integration tests in a real VS Code, and packaging.
+# Runs every check on a clean machine: lint, unit tests, type checks and
+# packaging in one job, and integration tests in a real VS Code in another,
+# against both the oldest supported VS Code (package.json engines) and stable.
 name: CI
 
 on:
@@ -18,7 +19,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -29,23 +30,65 @@ jobs:
 
       - run: npm ci
 
-      - name: Compile (type checks, lint, bundle)
-        run: npm run compile
+      # The lint rules are warnings locally; CI fails on any of them.
+      - name: Lint
+        run: npx eslint src test --max-warnings 0
 
       - name: Unit tests
         run: npm run test:unit
 
+      # vsce runs vscode:prepublish (type checks, lint, production bundle),
+      # so this step is also the type check.
+      - name: Type check and package
+        run: npx --yes @vscode/vsce@4.1.0 package --out callsite.vsix
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: callsite-vsix
+          path: callsite.vsix
+          if-no-files-found: error
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # 1.90.0 is the minimum in package.json engines.vscode.
+        vscode: ['1.90.0', stable]
+    name: integration (VS Code ${{ matrix.vscode }})
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Most of these ship with the runner image; skip apt entirely if so.
       - name: Install VS Code system libraries
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libnss3 libgtk-3-0 libgbm1 libasound2t64 libxss1 libxkbfile1 xvfb
+          missing=$(for p in libnss3 libgtk-3-0 libgbm1 libasound2t64 libxss1 libxkbfile1 xvfb; do
+            dpkg -s "$p" >/dev/null 2>&1 || echo "$p"
+          done)
+          if [ -n "$missing" ]; then
+            echo "Installing: $missing"
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends $missing
+          fi
 
-      # @vscode/test-cli downloads the latest stable VS Code into .vscode-test.
-      # Key the cache on that version so a new release refreshes it.
-      - name: Look up the stable VS Code version
+      # Key the .vscode-test cache on the exact version, so a new stable
+      # release refreshes it.
+      - name: Resolve the VS Code version
         id: vscode
-        run: echo "version=$(curl -fsSL https://update.code.visualstudio.com/api/releases/stable | jq -r '.[0]')" >> "$GITHUB_OUTPUT"
+        run: |
+          v='${{ matrix.vscode }}'
+          if [ "$v" = stable ]; then
+            v=$(curl -fsSL https://update.code.visualstudio.com/api/releases/stable | jq -r '.[0]')
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
 
       - name: Cache VS Code
         uses: actions/cache@v6
@@ -53,14 +96,13 @@ jobs:
           path: .vscode-test
           key: vscode-test-${{ runner.os }}-${{ steps.vscode.outputs.version }}
 
+      # Build directly instead of through pretest:integration, which repeats
+      # the type checks and lint the build job already ran. The production
+      # bundle is what the .vsix ships.
+      - name: Build
+        run: npm run compile-tests && node esbuild.js --production
+
       - name: Integration tests
-        run: xvfb-run -a npm run test:integration
-
-      - name: Package
-        run: npx --yes @vscode/vsce package --out callsite.vsix
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: callsite-vsix
-          path: callsite.vsix
-          if-no-files-found: error
+        run: xvfb-run -a npx vscode-test
+        env:
+          VSCODE_VERSION: ${{ steps.vscode.outputs.version }}
