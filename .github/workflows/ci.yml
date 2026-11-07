@@ -8,10 +8,11 @@ on:
   push:
     branches: [main]
 
-# A new push to the same PR or branch cancels the older run.
+# A new push to the same PR cancels the older run. Runs on main are never
+# cancelled, so every commit there gets a result.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -32,7 +33,7 @@ jobs:
 
       # The lint rules are warnings locally; CI fails on any of them.
       - name: Lint
-        run: npx eslint src test --max-warnings 0
+        run: npm run lint -- --max-warnings 0
 
       - name: Unit tests
         run: npm run test:unit
@@ -83,10 +84,12 @@ jobs:
       # release refreshes it.
       - name: Resolve the VS Code version
         id: vscode
+        # Explicit bash adds pipefail, so a failed curl fails the step.
+        shell: bash
         run: |
           v='${{ matrix.vscode }}'
           if [ "$v" = stable ]; then
-            v=$(curl -fsSL https://update.code.visualstudio.com/api/releases/stable | jq -r '.[0]')
+            v=$(curl -fsSL https://update.code.visualstudio.com/api/releases/stable | jq -er '.[0]')
           fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
 
