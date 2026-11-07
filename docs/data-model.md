@@ -182,18 +182,23 @@ The mutable folder `buildTree` fills in before finishing it into nodes: `folders
 
 ## Field mapping: VS Code → model → UI
 
-The glue is planned in #3. This table records how its fields are meant to be filled and shown, so the model and glue stay in step.
+This table records how each field is filled (in `src/vscode/references.ts`) and shown (in `src/vscode/treeItems.ts`), so the model and glue stay in step. Rows marked #4 or #5 are planned.
 
 | Model field | Filled from (glue) | Shown as (UI) |
 | --- | --- | --- |
-| `UsageModel.symbol` | `document.getWordRangeAtPosition` at the cursor | Root label: `symbol — N usages` |
-| `UsageModel.definition` | `vscode.executeDefinitionProvider` | Definition file icon (via `FileNode.hasDefinition`) |
+| `UsageModel.symbol` | `document.getWordRangeAtPosition` at the cursor | Root label: `symbol — N usages` (`rootLabel`) |
+| `UsageModel.definition` | First result of `vscode.executeDefinitionProvider`; for a `LocationLink`, its `targetSelectionRange` (the name) | Definition file icon and `· definition` (via `FileNode.hasDefinition`) |
 | `UsageModel.workspaceRoots` | `vscode.workspace.workspaceFolders` (`name`, `uri.toString()`) | Workspace nodes in a multi-root workspace |
-| `Usage.uri`, `Usage.range` | `vscode.executeReferenceProvider` results | Click target; editor decorations and scrollbar marks |
+| `Usage.uri`, `Usage.range` | `vscode.executeReferenceProvider` results | Usage line click opens the file with the range selected; editor decorations and scrollbar marks (#4) |
 | `Usage.rootIndex` | `vscode.workspace.getWorkspaceFolder(uri)?.index` | Which group the file lands in |
-| `Usage.path` | `Uri.path`, relative to the root folder's path and split on `/` | Folder hierarchy |
-| `Usage.lineText` | `openTextDocument(uri).lineAt(range.start.line).text` | Usage line child nodes: `L42: text` |
-| `Usage.isDefinition` | Location matches the definition | Definition file icon |
+| `Usage.path` | `pathSegments(uri.path, folder?.uri.path)`: the root's segment count is dropped, so path casing doesn't matter | Folder hierarchy |
+| `Usage.lineText` | `openTextDocument(uri).lineAt(range.start.line).text`, each file opened once in parallel; `''` if it can't be opened | Usage lines: `L42: text`, trimmed, with the usage highlighted (`usageLabel`) |
+| `Usage.isDefinition` | Same URI and start position as the definition | Definition file icon |
 | `FolderNode.count`, `FileNode.count` | computed by `buildTree` | Node `description` |
+| `FolderNode.group` | computed by `buildTree` | Icon: `root-folder` for a workspace, `folder-library` for **Other**, the folder icon otherwise |
 | `FolderNode.id`, `FileNode.id` | computed by `buildTree` | `TreeItem.id`, which keeps expansion state across refreshes |
-| `Cursor` | computed by `order.ts` | Status bar: `File 2 of 7 · Usage 3/5` |
+| `Cursor` | computed by `order.ts` | Status bar: `File 2 of 7 · Usage 3/5` (#5) |
+
+### `UsageLabel` (`types/usageLabel.ts`)
+
+What `usageLabel(usage)` returns, shaped like `vscode.TreeItemLabel`: `label` is `L<line>: <trimmed text>`, and `highlights` holds one `[start, end)` span over the usage in that label, or nothing when the usage spans several lines.

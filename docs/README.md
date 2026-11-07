@@ -17,11 +17,11 @@ flowchart LR
         LS["Language servers"]
         UI["Sidebar tree, editor, status bar"]
     end
-    subgraph glue["src/vscode (glue, planned in #3)"]
+    subgraph glue["src/vscode (glue)"]
         REF["references.ts"]
-        TP["treeProvider.ts"]
-        NAV["navigation.ts"]
-        DEC["decorations.ts"]
+        TP["treeProvider.ts<br/>treeItems.ts"]
+        NAV["navigation.ts (#5)"]
+        DEC["decorations.ts (#4)"]
     end
     subgraph model["src/model (pure, no vscode)"]
         UM[/"UsageModel"/]
@@ -41,9 +41,9 @@ flowchart LR
 
 ## Data flow
 
-1. **Collect** (glue): the glue asks the language servers for references and the definition, then resolves each location's workspace root, path segments and line text with VS Code's own APIs. The result is one `UsageModel`.
+1. **Collect** (glue): `callsite.showUsages` calls `collectUsages`, which asks the language servers for references and the definition, opens each file once to read line text, and resolves each location's workspace root (`getWorkspaceFolder`) and path segments (`pathSegments`). The result is one `UsageModel`.
 2. **Build** (model): `buildTree(model)` returns a `RootNode`. See [buildTree](build-tree.md).
-3. **Render** (glue): the tree provider maps each node to a `TreeItem`.
+3. **Render** (glue): the tree provider hands each node to `treeItems.ts`, which builds its `TreeItem` with labels from `labels.ts`. Usage lines are added under each file by the provider; they aren't model nodes.
 4. **Navigate** (model + glue): `fileOrder(root)` flattens the tree into the files in display order. The stepping functions take a `Cursor` and return a new one, and the glue opens, reveals and decorates whatever the cursor points at.
 
 Every later view (v2 excerpts, v3 impact map) also starts from the `UsageModel`, so the model is the one contract between VS Code and the views.
@@ -52,20 +52,41 @@ Every later view (v2 excerpts, v3 impact map) also starts from the `UsageModel`,
 
 ```
 src/
-  extension.ts       activate / deactivate
+  extension.ts       activate: creates the tree view, registers commands
   model/
     buildTree.ts     UsageModel -> RootNode
     order.ts         display order, next/prev file and usage, NO_CURSOR
-    utils.ts         compareUsages, compareNames, joinPath, hasFile
+    labels.ts        rootLabel, usageLabel (text and highlight offsets)
+    paths.ts         pathSegments: Uri.path -> Usage.path
+    utils.ts         compareUsages, compareNames, joinPath, splitPath, hasFile
     tree/
       draft.ts       newDraft, insertFile: the mutable tree buildTree fills in
       finish.ts      finishFolder, finishChildren: Draft -> finished nodes
     types/           one type per file, re-exported from types/index.ts
-  vscode/            glue (planned in #3)
+  vscode/
+    showUsages.ts    the callsite.showUsages command: collect, build, show
+    references.ts    collectUsages: language server results -> UsageModel
+    convert.ts       vscode.Range / Location <-> model Range / Location
+    treeProvider.ts  UsagesTreeProvider (TreeDataProvider)
+    treeItems.ts     a TreeItem per node kind
+media/
+  callsite.svg       activity bar icon
 test/
-  unit/              Vitest: buildTree.test.ts, order.test.ts, factories.ts, helpers.ts
-  integration/       @vscode/test-cli, runs inside VS Code
+  unit/              Vitest: one test file per model module, plus factories.ts, helpers.ts
+  integration/       @vscode/test-cli, runs inside VS Code with test/fixture open
+  fixture/           small TypeScript project the integration tests search
 ```
+
+## Contributions
+
+| Kind | Id | Notes |
+| --- | --- | --- |
+| Command | `callsite.showUsages` | "Callsite: Show Usages". In the palette when an editor is open, and in the editor context menu when the file has a reference provider. Returns the `RootNode` it showed, which the integration tests use |
+| View container | `callsite` | Activity bar, icon `media/callsite.svg` |
+| View | `callsite.usages` | The usages tree. Shows welcome text with a Show Usages button until there are results |
+| Context key | `callsite.hasResults` | True while the tree shows results; the #5 keybindings will use it |
+
+Only the latest search updates the tree: if an older search finishes after a newer one started, its results are dropped.
 
 ## Navigation in brief
 
