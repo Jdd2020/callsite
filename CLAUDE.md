@@ -51,8 +51,15 @@ References++ by Johannes Rieken (microsoft/vscode-extension-samples, `contentpro
 
 ## Conventions
 
+- Architecture docs live in `docs/`: `docs/README.md` (layers and data flow), `docs/data-model.md` (every model type and field mapping) and `docs/build-tree.md` (how `buildTree` works). Update them in the same change as any change to the model's types or tree-building rules.
+
 - Keep pure logic (building the folder tree, counts, grouping, excerpt formatting, filtering) in modules with no `vscode` import, so it is unit-testable with Vitest.
 - Keep VS Code API glue thin.
+- Use absolute imports: `@/` for `src/` (`@/model/types`) and `@test/` for `test/` (`@test/unit/factories`), not relative paths. The aliases are defined in `tsconfig.json` `paths` and repeated in `vitest.config.mts` `resolve.alias`; keep them in sync. esbuild reads the tsconfig, but `tsc` doesn't rewrite aliases in its output, so files compiled to `out/` (the integration tests in `test/integration`) must use relative imports.
+- Start every `.ts` file in `src/` and `test/` with a block comment before the imports: `/** @file What this file is for. */`. Use block comments for file headers, not `//` line comments.
+- Give every function a doc comment with type hints: `@param {Type} name - description` for each parameter and `@returns {Type} description` (including `{void}`). Optional parameters use `[name]`.
+- One type per file under `src/model/types/` (e.g. `types/usage.ts`), re-exported from `types/index.ts`; import them from `@/model/types`. Test-only types (factory options, assertion helper types) stay next to the test code that uses them.
+- Keep each module to its main exports. Move helper functions out: small shared ones go in `src/model/utils.ts`; a helper big enough to stand on its own (roughly 15+ lines, or a group of functions with their own type) gets its own file, like `src/model/tree/finish.ts`.
 - A few integration tests with `@vscode/test-cli` against a small fixture workspace. Language servers need time to warm up before references return.
 - Development and testing happen on a personal machine only.
 
