@@ -4,10 +4,8 @@
  * UsageModel for the views.
  */
 import * as vscode from 'vscode';
-import { pathSegments } from '@/model/paths';
-import type { Location, Usage, UsageModel } from '@/model/types';
-import { sameStart } from '@/model/utils';
-import { toLocation, toRange } from '@/vscode/convert';
+import type { UsageModel } from '@/model/types';
+import { toLocation, toUsage } from '@/vscode/convert';
 import { readLines } from '@/vscode/lineText';
 
 /**
@@ -34,27 +32,5 @@ export async function collectUsages(document: vscode.TextDocument, position: vsc
 		definition: definitionLocations[0],
 		usages: references.map((ref) => toUsage(ref, lines.get(ref.uri.toString())?.get(ref.range.start.line) ?? '', definitionLocations)),
 		workspaceRoots: (vscode.workspace.workspaceFolders ?? []).map((folder) => ({ name: folder.name, uri: folder.uri.toString() })),
-	};
-}
-
-/**
- * One reference as a model Usage, with its root, path and line text resolved.
- *
- * @param {vscode.Location} ref - The reference.
- * @param {string} lineText - Text of the line it starts on ('' if the file couldn't be read).
- * @param {Location[]} definitions - Where the symbol is defined.
- * @returns {Usage} The usage.
- */
-function toUsage(ref: vscode.Location, lineText: string, definitions: Location[]): Usage {
-	const uri = ref.uri.toString();
-	const range = toRange(ref.range);
-	const folder = vscode.workspace.getWorkspaceFolder(ref.uri);
-	return {
-		uri,
-		range,
-		rootIndex: folder?.index,
-		path: pathSegments(ref.uri.path, folder?.uri.path),
-		lineText,
-		isDefinition: definitions.some((definition) => sameStart(definition, { uri, range })),
 	};
 }
