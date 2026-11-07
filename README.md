@@ -1,4 +1,7 @@
 # callsite
+
+[![CI](https://github.com/Jdd2020/callsite/actions/workflows/ci.yml/badge.svg)](https://github.com/Jdd2020/callsite/actions/workflows/ci.yml)
+
 VSCode extension to easily display all references to an object in an easily digestible manner.
 
 ## Development

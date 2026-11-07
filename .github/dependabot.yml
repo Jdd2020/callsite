@@ -1,0 +1,23 @@
+# Weekly update PRs for the CI actions and npm dev dependencies, grouped so
+# each ecosystem opens at most one PR a week.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    ignore:
+      # Raising @types/vscode would let code use APIs newer than
+      # engines.vscode; bump both together by hand.
+      - dependency-name: '@types/vscode'
