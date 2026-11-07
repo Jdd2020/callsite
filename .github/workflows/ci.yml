@@ -1,0 +1,66 @@
+# Runs every check on a clean machine: type checks, lint, bundle, unit tests,
+# integration tests in a real VS Code, and packaging.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to the same PR or branch cancels the older run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Compile (type checks, lint, bundle)
+        run: npm run compile
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Install VS Code system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 libgtk-3-0 libgbm1 libasound2t64 libxss1 libxkbfile1 xvfb
+
+      # @vscode/test-cli downloads the latest stable VS Code into .vscode-test.
+      # Key the cache on that version so a new release refreshes it.
+      - name: Look up the stable VS Code version
+        id: vscode
+        run: echo "version=$(curl -fsSL https://update.code.visualstudio.com/api/releases/stable | jq -r '.[0]')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache VS Code
+        uses: actions/cache@v4
+        with:
+          path: .vscode-test
+          key: vscode-test-${{ runner.os }}-${{ steps.vscode.outputs.version }}
+
+      - name: Integration tests
+        run: xvfb-run -a npm run test:integration
+
+      - name: Package
+        run: npx --yes @vscode/vsce package --out callsite.vsix
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: callsite-vsix
+          path: callsite.vsix
+          if-no-files-found: error
